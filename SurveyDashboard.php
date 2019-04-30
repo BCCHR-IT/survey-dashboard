@@ -2,7 +2,7 @@
 
 namespace BCCHR\SurveyDashboard;
 
-use Redcap;
+use REDCap;
 use Project;
 
 class SurveyDashboard extends \ExternalModules\AbstractExternalModule
@@ -49,6 +49,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                 $surveyFormName["$this_survey_id"] = $Proj->surveys[$this_survey_id]['form_name'];
             }
         }
+
         // Get first element of the dropdown
         reset($surveyEventOptions); 
         $default = key($surveyEventOptions);
@@ -64,7 +65,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
             $event = $default_arr[1];
         }
         ?>
-        <p style="max-width:810px;margin:5px 0 15px;">The <b>Survey Dashboard </b> displays survey statistics for individual REDCap projects.  The dashboard is divided in three sections:</p>
+        <p style="max-width:810px;margin:5px 0 15px;">The <b>Survey Dashboard</b> displays survey statistics for individual REDCap projects. The dashboard is divided in three sections:</p>
         <ul>
 	        <li>A survey completion breakdown pie chart, displaying incomplete, unverified and completed survey statuses </li>
 	        <li>A survey completion count timeline, displaying surveys completed across time and their corresponding invitation send times (when available) </li>
@@ -94,7 +95,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                         <?php
                             foreach($surveyEventOptions as $value => $label) {
                                 $label = htmlspecialchars($label); 
-                                echo '<option '.(($value == $default)?'selected ':'').'value="'. $value .'">'. $label .'</option>';
+                                print '<option '.(($value == $default)?'selected ':'').'value="'. $value .'">'. $label .'</option>';
                             }
                         ?>
                     </select>
@@ -164,7 +165,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
             while ($row = db_fetch_assoc($survey_public_result)) {	
                 $survey  = $row['survey_id']; 
             }
-            echo '<p class="yellow" style="margin:20px 0;">
+            print '<p class="yellow" style="margin:20px 0;">
                 <strong>Warning - Public Surveys</strong><br>The Survey Dashboard uses invitation send time as the start time for surveys. 
                 For projects with Public Surveys, no survey invitations are sent, and thus, portions of the Dashboard will not work (namely, 
                 the survey timeline will not display the invitations sent across time, nor will it display the duration histogram).
@@ -201,7 +202,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                     }
                 }
             }
-            echo '<p class="yellow" style="margin:20px 0;">
+            print '<p class="yellow" style="margin:20px 0;">
                 <strong>Warning - Survey Queue, Autocontinue</strong><br> The Survey Dashboard uses invitation send time as the start time for surveys. 
                 For projects with a Survey Queue or using the Autocontinue feature, the survey invitation time is based on the first survey invitation send time.
                 </p>';
@@ -253,7 +254,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                 <div class="panel-heading">
                     <div class="row">
                         <div class="col-12 text-right">
-                            <div class="huge"><?php echo $total_participants; ?></div>
+                            <div class="huge"><?php print $total_participants; ?></div>
                             <div>Total Participants</div>
                         </div>
                     </div>
@@ -264,7 +265,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                     <div class="panel-heading">
                         <div class="row">
                             <div class="col-12 text-right">
-                                <div class="huge"><?php echo $survey_complete_status; if ($dataentry_complete_status != 0) { echo ' <small>(+'.$dataentry_complete_status.')</small>'; } ?></div>
+                                <div class="huge"><?php print $survey_complete_status; if ($dataentry_complete_status != 0) { print ' <small>(+'.$dataentry_complete_status.')</small>'; } ?></div>
                                 <div>Completed via Survey<?php if ($dataentry_complete_status != 0) { ?> <small>(+Data Entry)</small><?php } ?></div>
                             </div>
                         </div>
@@ -276,7 +277,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                     <div class="panel-heading">
                         <div class="row">
                             <div class="col-12 text-right">
-                                <div class="huge"><?php echo $total_incomplete_status; ?></div>
+                                <div class="huge"><?php print $total_incomplete_status; ?></div>
                                 <div>Incomplete</div>
                             </div>
                         </div>
@@ -288,7 +289,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                     <div class="panel-heading">
                         <div class="row">
                             <div class="col-12 text-right">
-                            <div class="huge"><?php echo $total_unverified_status; ?></div>
+                            <div class="huge"><?php print $total_unverified_status; ?></div>
                             <div>Unverified</div>                           
                         </div>
                         </div>
@@ -300,7 +301,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                     <div class="panel-heading">
                         <div class="row">
                             <div class="col-12 text-right">
-                            <div class="huge"><?php echo $total_partial_status; ?></div>
+                            <div class="huge"><?php print $total_partial_status; ?></div>
                             <div>Partial</div>                           
                         </div>
                         </div>
@@ -406,12 +407,12 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         <link rel="stylesheet" type="text/css" href="<?php print $this->getUrl("sb-admin.css"); ?>">           
         <script>
             var SurveyDashboard = {
-                master_set: <?php echo json_encode(array_values($data_set)) ?>,
-                data_set: <?php echo json_encode(array_values($data_set)) ?>,
+                master_set: <?php print json_encode(array_values($data_set)) ?>,
+                data_set: <?php print json_encode(array_values($data_set)) ?>,
                 complete_set: [], 
                 invite_set: [],
                 duration_set: [],
-                prod_time: <?php echo ($prod_time)?$prod_time:"null" ?>,
+                prod_time: <?php print ($prod_time)?$prod_time:"null" ?>,
                 timelineChart: null, 
                 durationChart: null,
                 surveySelect: function (value) {
@@ -422,7 +423,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                 },
                 filter: function () {
                     var start, end;
-                    var prod_time = <?php echo ($prod_time)?$prod_time:"null" ?>;
+                    var prod_time = <?php print ($prod_time)?$prod_time:"null" ?>;
 
                     switch ($('#period').val()) {
                         case 'PD':        
@@ -496,6 +497,8 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                                     durMin = durPt;
                                 }
                                 durTotal += durPt;
+
+                                console.log(durTotal);
                             }
                         }
                         if (this.data_set[i]["invite"]) {
@@ -641,7 +644,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                         plotShadow: false
                     },
                     title: {
-                        text: '<?php echo "Survey Response Overview"; ?>'
+                        text: '<?php print "Survey Response Overview"; ?>'
                     },
                     
                     tooltip: {
@@ -664,10 +667,10 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                         type: 'pie',
                         name: 'Browser share',
                         data: [
-                            { name: 'Complete',  y: <?php echo $total_complete_status; ?>,  color: '#098800' },
-                            { name: 'Incomplete', y: <?php echo $total_incomplete_status; ?>, color: '#d9534f' },
-                            { name: 'Unverified',    y: <?php echo $total_unverified_status; ?>,    color: '#ffe000' },
-                            { name: 'Partial',    y: <?php echo $total_partial_status; ?>,    color: '#ff9020' },
+                            { name: 'Complete',  y: <?php print $total_complete_status; ?>,  color: '#098800' },
+                            { name: 'Incomplete', y: <?php print $total_incomplete_status; ?>, color: '#d9534f' },
+                            { name: 'Unverified',    y: <?php print $total_unverified_status; ?>,    color: '#ffe000' },
+                            { name: 'Partial',    y: <?php print $total_partial_status; ?>,    color: '#ff9020' },
                         ]
                     }]
                 });
@@ -688,7 +691,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                         type: 'line'
                     },
                     title: {
-                        text: '<?php echo "Survey Invitation and Completion Counts<sup>†</sup>"; ?>',
+                        text: '<?php print "Survey Invitation and Completion Counts<sup>†</sup>"; ?>',
                         align: 'left',
                         margin: 30,
                         x: 5,
@@ -746,7 +749,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                         fallbackToExportServer: false  // export server disabled
                     },
                     title: {
-                        text: '<?php echo "Distribution of Duration from Survey Invitation to Completion"; ?>',
+                        text: '<?php print "Distribution of Duration from Survey Invitation to Completion"; ?>',
                         align: 'left'
                     },
                     xAxis: [{
