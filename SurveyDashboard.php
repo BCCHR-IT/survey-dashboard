@@ -64,11 +64,6 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
             $event = $default_arr[1];
         }
         ?>
-        <!--
-        <div class="row">
-            <div class="col-sm-12 title">Survey Dashboard</div>
-        </div><br/> 
-        -->
         <p style="max-width:810px;margin:5px 0 15px;">The <b>Survey Dashboard </b> displays survey statistics for individual REDCap projects.  The dashboard is divided in three sections:</p>
         <ul>
 	        <li>A survey completion breakdown pie chart, displaying incomplete, unverified and completed survey statuses </li>
@@ -121,7 +116,6 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         $total_participants = count($data_array);
 
         $data_set = [];
-        //echo "<pre>".print_r($data_array,true)."</pre>";
         ## Get survey time stamp field
         ## Get form status field
 
@@ -171,7 +165,9 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                 $survey  = $row['survey_id']; 
             }
             echo '<p class="yellow" style="margin:20px 0;">
-                <strong>Warning - Public Surveys</strong><br>The Survey Dashboard uses invitation send time as the start time for surveys.  For projects with Public Surveys, no survey invitations are sent, and thus, portions of the Dashboard will not work (namely, the survey timeline will not display the invitations sent across time, nor will it display the duration histogram).
+                <strong>Warning - Public Surveys</strong><br>The Survey Dashboard uses invitation send time as the start time for surveys. 
+                For projects with Public Surveys, no survey invitations are sent, and thus, portions of the Dashboard will not work (namely, 
+                the survey timeline will not display the invitations sent across time, nor will it display the duration histogram).
                 </p>';
         }
 
@@ -191,8 +187,8 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                     $row_count_survey_queue_result = mysqli_num_rows($survey_queue_result);
                     if($row_count_survey_queue_result != NULL && $row_count_survey_queue_result != 0)
                     {
-                        while ($row = db_fetch_assoc($survey_queue_result, MYSQLI_ASSOC)) {	
-                        $survey  = $row['condition_surveycomplete_survey_id'];  // Parent survey id value
+                        while ($row = db_fetch_assoc($survey_queue_result)) {	
+                            $survey  = $row['condition_surveycomplete_survey_id'];  // Parent survey id value
                         }		
                     }	
                 }
@@ -206,7 +202,8 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                 }
             }
             echo '<p class="yellow" style="margin:20px 0;">
-                <strong>Warning - Survey Queue, Autocontinue</strong><br> The Survey Dashboard uses invitation send time as the start time for surveys.  For projects with a Survey Queue or using the Autocontinue feature, the survey invitation time is based on the first survey invitation send time.
+                <strong>Warning - Survey Queue, Autocontinue</strong><br> The Survey Dashboard uses invitation send time as the start time for surveys. 
+                For projects with a Survey Queue or using the Autocontinue feature, the survey invitation time is based on the first survey invitation send time.
                 </p>';
         }
 
@@ -224,7 +221,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         if($row_count2 != NULL && $row_count2 != 0)
         {
             date_default_timezone_set('UTC');  // Set the timezone to UTC as Highchart will offset according to local timezone
-            while ($row = db_fetch_assoc($result2, MYSQLI_ASSOC)) {
+            while ($row = db_fetch_assoc($result2)) {
                 if (($utc_date = strtotime(substr($row["sent_time"],0,10))) !== false) {
                     if (empty($row["record"])) {
                         $data_set["sdashboard_temp_pid".$row["participant_id"].$row["sent_time"]]["invite"] = $utc_date;
@@ -239,7 +236,6 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         }   
 
         foreach ($data_set as $key => $arr) {
-            //unset($data_set[$key]["invite"]);
             if (!isset($arr["invite"])) {
                 unset($data_set[$key]["duration"]);
             }
@@ -247,7 +243,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
 
         date_default_timezone_set('UTC');
         $prod_time = strtotime(substr($Proj->project["production_time"],0,10));
-        //echo '<div>'.print_r(($data_set),true).'</div>';
+
         ##  Plot into Graph 
         ?>
         <br><br>
@@ -788,7 +784,9 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                     }],
                     tooltip: {
                         formatter: function () {
-                            return '<span style="font-size:10px">' + SurveyDashboard.secToStr(Math.round(this.point.x)) +' - ' + SurveyDashboard.secToStr(Math.round(this.point.x2)) + '</span><br/><span style="color:' + this.color + '">●</span> Count: <b>' + this.y + '</b><br/>';
+                            return '<span style="font-size:10px">' + SurveyDashboard.secToStr(Math.round(this.point.x)) +' - ' 
+                            + SurveyDashboard.secToStr(Math.round(this.point.x2)) + '</span><br/><span style="color:' + this.color 
+                            + '">●</span> Count: <b>' + this.y + '</b><br/>';
                         }
                     },
                     legend: {
