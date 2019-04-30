@@ -4,7 +4,6 @@ namespace BCCHR\SurveyDashboard;
 
 use Redcap;
 use Project;
-use RCView;
 
 class SurveyDashboard extends \ExternalModules\AbstractExternalModule
 {
@@ -24,26 +23,11 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         $Proj = new Project();
         $pid = $this->getProjectId();
 
-        $lang['plugin_description'] = "The <b>Survey Dashboard </b> displays survey statistics for individual REDCap projects.  The dashboard is divided in three sections:
-        <ul>
-        <li>A survey completion breakdown pie chart, displaying incomplete, unverified and completed survey statuses </li>
-        <li>A survey completion count timeline, displaying surveys completed across time and their corresponding invitation send times (when available) </li>
-        <li>A duration histogram displaying time between survey invitation and survey completion (only calculated if both values are present). </li>
-        </ul>
-        ";
         ?>
         <?php
         // Generate the dropdown list of "Survey - Event" combo
         // Based on Code copied from REDCap Class - SurveyScheduler::getInvitationLogSurveyList()
         $surveyEventOptions = array(); $surveyFormName = [];
-        /* Combined stat on a single survey over all events is not required for now
-        // If longitudinal, then first display list of all surveys for ALL events (set 0 for event in drop-down value)
-        if ($includeAllEventsOptionsForLongitudinal && $longitudinal) {
-            foreach ($Proj->surveys as $this_survey_id=>$survey_attr) {
-                // Add this survey/event as drop-down option
-                $surveyEventOptions["$this_survey_id-0"] = "\"{$survey_attr['title']}\" ".$lang['survey_434'];
-            }
-        }*/
         // Loop through each event and output each where this form is designated
         foreach ($Proj->eventsForms as $this_event_id=>$these_forms) {
             // Loop through forms
@@ -70,9 +54,11 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         $default = key($surveyEventOptions);
         $survey = $_GET["survey"];   // survey
         $event = $_GET["event"];     // event
+        
         if (!empty($survey) && !empty($event) && isset($surveyEventOptions["$survey-$event"])) {
             $default = "$survey-$event";
-        } else {
+        } 
+        else {
             $default_arr = explode("-", $default);
             $survey = $default_arr[0];
             $event = $default_arr[1];
@@ -83,10 +69,14 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
             <div class="col-sm-12 title">Survey Dashboard</div>
         </div><br/> 
         -->
+        <p style="max-width:810px;margin:5px 0 15px;">The <b>Survey Dashboard </b> displays survey statistics for individual REDCap projects.  The dashboard is divided in three sections:</p>
+        <ul>
+	        <li>A survey completion breakdown pie chart, displaying incomplete, unverified and completed survey statuses </li>
+	        <li>A survey completion count timeline, displaying surveys completed across time and their corresponding invitation send times (when available) </li>
+	        <li>A duration histogram displaying time between survey invitation and survey completion (only calculated if both values are present). </li>
+	    </ul>
         <?php
 
-        print RCView::p(array('style'=>'max-width:810px;margin:5px 0 15px;'),$lang['plugin_description']);
-            
         $surveyQuery = "select * from redcap_surveys where project_id = '$pid' ";
 
         $sResult = $this->query($surveyQuery);
@@ -104,15 +94,14 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         <div class="row">
             <div class="col-sm-8 survey-dropdown">
                 <div>
-                    <select class="form-control" name="survey_event" id="survey_event" onchange="surveySelect(this.value)" >
+                    <select class="form-control" name="survey_event" id="survey_event" onchange="SurveyDashboard.surveySelect(this.value)" >
                         <option value ="">-- Select the Survey --</option>
-            <?php
-                foreach($surveyEventOptions as $value => $label) 
-                {
-                $label = htmlspecialchars($label); 
-                echo '<option '.(($value == $default)?'selected ':'').'value="'. $value .'">'. $label .'</option>';
-                }
-            ?>
+                        <?php
+                            foreach($surveyEventOptions as $value => $label) {
+                                $label = htmlspecialchars($label); 
+                                echo '<option '.(($value == $default)?'selected ':'').'value="'. $value .'">'. $label .'</option>';
+                            }
+                        ?>
                     </select>
                 </div>
                 <span>&nbsp;*</span>
@@ -136,12 +125,12 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         ## Get survey time stamp field
         ## Get form status field
 
-
         $total_complete_status = 0;
         $survey_complete_status = 0;
         $total_incomplete_status = 0;
         $total_unverified_status = 0;
         $total_partial_status = 0;
+
         for ($i=0; $i<$total_participants;$i++) {
             if ($data_array[$i][$surveyFormName[$survey].'_complete'] == 2) {	
                 $total_complete_status++;
@@ -152,6 +141,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                     $data_set[$data_array[$i][$record_id]] = ["complete" => $utc_date, "duration" => strtotime($data_array[$i][$surveyFormName[$survey].'_timestamp'])];
                 }
             }
+
             if ($data_array[$i][$surveyFormName[$survey].'_complete'] == 0) { 	
                 date_default_timezone_set('UTC'); 
                 if ($data_array[$i][$surveyFormName[$survey].'_timestamp'] == "[not completed]" || ($utc_date = strtotime(substr($data_array[$i][$surveyFormName[$survey].'_timestamp'],0,10))) !== false ) {
@@ -160,10 +150,12 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                     $total_incomplete_status++;
                 }
             }
+
             if ($data_array[$i][$surveyFormName[$survey].'_complete'] == 1) {	
                 $total_unverified_status++;
             }
         }
+
         $dataentry_complete_status = $total_complete_status - $survey_complete_status;
 
         $invite_time = [];
@@ -175,13 +167,12 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         $row_count_survey_public_result = mysqli_num_rows($survey_public_result);
         if($row_count_survey_public_result != NULL && $row_count_survey_public_result != 0)
         {
-        while ($row = db_fetch_assoc($survey_public_result)) {	
-        $survey  = $row['survey_id']; 
-        }
-        echo '<p class="yellow" style="margin:20px 0;">
-            <img src="/redcap/redcap_v7.4.22/Resources/images/exclamation_orange.png">
-            <strong>Warning - Public Surveys</strong><br>The Survey Dashboard uses invitation send time as the start time for surveys.  For projects with Public Surveys, no survey invitations are sent, and thus, portions of the Dashboard will not work (namely, the survey timeline will not display the invitations sent across time, nor will it display the duration histogram).
-            </p>';
+            while ($row = db_fetch_assoc($survey_public_result)) {	
+                $survey  = $row['survey_id']; 
+            }
+            echo '<p class="yellow" style="margin:20px 0;">
+                <strong>Warning - Public Surveys</strong><br>The Survey Dashboard uses invitation send time as the start time for surveys.  For projects with Public Surveys, no survey invitations are sent, and thus, portions of the Dashboard will not work (namely, the survey timeline will not display the invitations sent across time, nor will it display the duration histogram).
+                </p>';
         }
 
         //check if this survey is in survey queue list - if it yes - then pull the parent's survey invitation time 
@@ -190,33 +181,33 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         $row_count_survey_queue_result = mysqli_num_rows($survey_queue_result);
         if($row_count_survey_queue_result != NULL && $row_count_survey_queue_result != 0)
         {
-        while ($row = db_fetch_assoc($survey_queue_result)) {	
-        $survey  = $row['condition_surveycomplete_survey_id'];  // Parent survey id value
-        //check if this survey as parent survey_id - do loop 
-        for($i=0; $i<$row_count_survey_queue_result ;$i++)
-        {
-        $survey_queue  = "SELECT condition_surveycomplete_survey_id FROM redcap_surveys_queue where survey_id = $survey"; 
-        $survey_queue_result  = $this->query($survey_queue);				  
-        $row_count_survey_queue_result = mysqli_num_rows($survey_queue_result);
-        if($row_count_survey_queue_result != NULL && $row_count_survey_queue_result != 0)
-        {
-        while ($row = db_fetch_assoc($survey_queue_result, MYSQLI_ASSOC)) {	
-        $survey  = $row['condition_surveycomplete_survey_id'];  // Parent survey id value
-        }		
-        }	
-        }
-        if(empty($survey) || $survey == NULL) // Get the first conditional survey id
-        {	
-        $survey_queue_first = "SELECT * FROM redcap_surveys_queue where survey_id IN ( SELECT survey_id FROM redcap_surveys where project_id = $pid) LIMIT 0, 1";
-        $survey_queue_first_result = $this->query($survey_queue_first);
-        while ($row = db_fetch_assoc($survey_queue_first_result)) {	
-        $survey  = $row['condition_surveycomplete_survey_id']; }
-        }
-        }
-        echo '<p class="yellow" style="margin:20px 0;">
-            <img src="/redcap/redcap_v7.4.22/Resources/images/exclamation_orange.png">
-            <strong>Warning - Survey Queue, Autocontinue</strong><br> The Survey Dashboard uses invitation send time as the start time for surveys.  For projects with a Survey Queue or using the Autocontinue feature, the survey invitation time is based on the first survey invitation send time.
-            </p>';
+            while ($row = db_fetch_assoc($survey_queue_result)) {	
+                $survey  = $row['condition_surveycomplete_survey_id'];  // Parent survey id value
+                //check if this survey as parent survey_id - do loop 
+                for($i=0; $i<$row_count_survey_queue_result ;$i++)
+                {
+                    $survey_queue  = "SELECT condition_surveycomplete_survey_id FROM redcap_surveys_queue where survey_id = $survey"; 
+                    $survey_queue_result  = $this->query($survey_queue);				  
+                    $row_count_survey_queue_result = mysqli_num_rows($survey_queue_result);
+                    if($row_count_survey_queue_result != NULL && $row_count_survey_queue_result != 0)
+                    {
+                        while ($row = db_fetch_assoc($survey_queue_result, MYSQLI_ASSOC)) {	
+                        $survey  = $row['condition_surveycomplete_survey_id'];  // Parent survey id value
+                        }		
+                    }	
+                }
+                if(empty($survey) || $survey == NULL) // Get the first conditional survey id
+                {	
+                    $survey_queue_first = "SELECT * FROM redcap_surveys_queue where survey_id IN ( SELECT survey_id FROM redcap_surveys where project_id = $pid) LIMIT 0, 1";
+                    $survey_queue_first_result = $this->query($survey_queue_first);
+                    while ($row = db_fetch_assoc($survey_queue_first_result)) {	
+                        $survey  = $row['condition_surveycomplete_survey_id'];
+                    }
+                }
+            }
+            echo '<p class="yellow" style="margin:20px 0;">
+                <strong>Warning - Survey Queue, Autocontinue</strong><br> The Survey Dashboard uses invitation send time as the start time for surveys.  For projects with a Survey Queue or using the Autocontinue feature, the survey invitation time is based on the first survey invitation send time.
+                </p>';
         }
 
         $query2 = "SELECT rser.participant_id, min(rse.email_sent) as sent_time, rsp.event_id, rsp.hash, rsr.record " . 
@@ -234,7 +225,6 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         {
             date_default_timezone_set('UTC');  // Set the timezone to UTC as Highchart will offset according to local timezone
             while ($row = db_fetch_assoc($result2, MYSQLI_ASSOC)) {
-                
                 if (($utc_date = strtotime(substr($row["sent_time"],0,10))) !== false) {
                     if (empty($row["record"])) {
                         $data_set["sdashboard_temp_pid".$row["participant_id"].$row["sent_time"]]["invite"] = $utc_date;
@@ -337,7 +327,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
             <div class="col-sm-12 panel panel-grey time-filter"> 
                 <div class="dropdown-label">Show Time Statistics for Surveys with Completion Date: </div>
                 <div class="col-sm-4 dropdown-div">
-                    <select id="period" class="form-control" id="stat_range" onchange="filter()">
+                    <select id="period" class="form-control" id="stat_range" onchange="SurveyDashboard.filter()">
                         <option value="" selected>Since Project Creation</option>
                         <?php if($prod_time) { ?>
                         <option value="PD">Since Move to Production</option> 
@@ -352,41 +342,8 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                 </div>
             </div>
             </div>
-        </div><br/>
-        <!--div class="row">
-            <div class="col-sm-6">
-                <div class="panel panel-grey">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-9 text-left">
-                            <div>Highest Daily Count of Survey Completion</div>
-                            <div><span class="large" id="complete-high-count">N/A</span>&nbsp;<span class="small" id="complete-high"></span></div>                          
-                            </div>
-                            <div class="col-3">
-                                <i class="fa fa-shopping-cart fa-5x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6">
-                <div class="row">
-                    <div class="panel panel-grey">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-3">
-                                    <i class="fa fa-shopping-cart fa-5x"></i>
-                                </div>
-                                <div class="col-9 text-right">
-                                <div>* Highest Daily Count of Invitations Sent</div>
-                                <div><span class="small" id="invite-high"></span>&nbsp;<span class="large" id="invite-high-count">N/A</span></div>                            
-                            </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div-->
+        </div>
+        <br/>
         <div class="row">
             <div class="col-12">
                 <div id="conso-project-timeline-chart"></div>
@@ -452,208 +409,222 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         <script src="<?php print $this->getUrl("histogram-bellcurve.js"); ?>"></script>
         <link rel="stylesheet" type="text/css" href="<?php print $this->getUrl("sb-admin.css"); ?>">           
         <script>
+            var SurveyDashboard = {
+                master_set: <?php echo json_encode(array_values($data_set)) ?>,
+                data_set: <?php echo json_encode(array_values($data_set)) ?>,
+                complete_set: [], 
+                invite_set: [],
+                duration_set: [],
+                prod_time: <?php echo ($prod_time)?$prod_time:"null" ?>,
+                timelineChart: null, 
+                durationChart: null,
+                surveySelect: function (value) {
+                    value = value.split("-");
+                    $(".loadertxt").show();
+                    $(".loader").show();
+                    window.location.href = "<?php print $this->getUrl("index.php"); ?>" + "&survey=" + value[0] + "&event=" + value[1];
+                },
+                filter: function () {
+                    var start, end;
+                    var prod_time = <?php echo ($prod_time)?$prod_time:"null" ?>;
+
+                    switch ($('#period').val()) {
+                        case 'PD':        
+                            start = prod_time;
+                            break;
+                        case '1y':
+                            start = (new Date().getTime()/1000|0) - 31536000;
+                            break;
+                        case '90d':
+                            start = (new Date().getTime()/1000|0) - 7776000;
+                            break;
+                        case '60d':
+                            start = (new Date().getTime()/1000|0) - 5184000;
+                            break;
+                        case '30d':
+                            start = (new Date().getTime()/1000|0) - 2592000;
+                            break;
+                        case '14d':
+                            start = (new Date().getTime()/1000|0) - 1209600;
+                            break;
+                        case '7d':
+                            start = (new Date().getTime()/1000|0) - 604800;
+                            break;
+                    }
+
+                    if (start && !(start && end)) {
+                        this.data_set = [];
+                        for (var i = 0; i < this.master_set.length; i++) {
+                            if (this.master_set[i]["complete"] >= start) {
+                                this.data_set.push(this.master_set[i]);
+                            }
+                        }
+                    } 
+                    else if (!start && !end) { 
+                        this.data_set = this.master_set;
+                    }
+
+                    this.update();
+                },
+                update: function () {
+                    var cp = [], inv = [], dur = [];
+                    var completeHigh, inviteHigh, cpHighCount = 0, invHighCount = 0;
+                    var durTotal = 0, durMax = 0, durMin = 0;
+
+                    this.complete_set = []; this.invite_set = []; this.duration_set = [];
+
+                    for (var i = 0; i < this.data_set.length; i++) {
+                        if (this.data_set[i]["complete"]) {
+                            var completeTS = this.data_set[i]["complete"];
+                            if (cp[completeTS]) {
+                                cp[completeTS]++;
+                            } 
+                            else {
+                                cp[completeTS] = 1;
+                            }
+
+                            if (cp[completeTS] > cpHighCount) {
+                                completeHigh = completeTS;
+                                cpHighCount = cp[completeTS];
+                            }
+                            
+                            if (this.data_set[i]["duration"]) {
+                                var durPt = this.data_set[i]["duration"];
+                                this.duration_set.push(durPt);
+
+                                if (durPt > durMax) {
+                                    durMax = durPt;
+                                }
+
+                                if (durMin == 0 || durPt < durMin) {
+                                    durMin = durPt;
+                                }
+                                durTotal += durPt;
+                            }
+                        }
+                        if (this.data_set[i]["invite"]) {
+                            var inviteTS = this.data_set[i]["invite"];
+                            if (inv[inviteTS]) {
+                                inv[inviteTS]++;
+                            }
+                            else {
+                                inv[inviteTS] = 1;
+                            }
+
+                            if (inv[inviteTS] > invHighCount) {
+                                inviteHigh = inviteTS;
+                                invHighCount = inv[inviteTS];
+                            }
+                        } 
+                    }
+
+                    var cp_keys = Object.keys(cp);
+                    for (var i = 0; i < cp_keys.length; i++) {
+                        /*	Add dummy datapoint of 0 in between actual datapoints to keep line default to 0
+                        *	if the difference between 2 actual datapoints is more than 1 day, add one dummy after the first actual datapoint;
+                        *	and if the difference is more than 2 days, add one more dummy before the second actual datapoint
+                        */
+                        if (i == 0) {
+                            this.complete_set.push([(cp_keys[i]-86400)*1000, 0]);
+                        }
+                        else if (cp_keys[i] - cp_keys[i-1] > 86400){  
+                            this.complete_set.push([(+cp_keys[i-1]+86400)*1000, 0]);  // Need to add the "+" in front of the variable to force js to treat it as number
+                            if (cp_keys[i] - cp_keys[i-1] > 172800) {  
+                                this.complete_set.push([(cp_keys[i]-86400)*1000, 0]);
+                            }
+                        }
+                        this.complete_set.push([cp_keys[i]*1000, cp[cp_keys[i]]]);
+                    }
+
+                    var inv_keys = Object.keys(inv);
+                    for (var i = 0; i < inv_keys.length; i++) {
+                        if (i == 0) {
+                            this.invite_set.push([(inv_keys[i]-86400)*1000, 0]);
+                        }
+                        else if (inv_keys[i] - inv_keys[i-1] > 86400){
+                            this.invite_set.push([(+inv_keys[i-1]+86400)*1000, 0]);  // Need to add the "+" in front of the variable to force js to treat it as number
+                            if (inv_keys[i] - inv_keys[i-1] > 172800) { 
+                                this.invite_set.push([(inv_keys[i]-86400)*1000, 0]);
+                            }
+                        }
+                        this.invite_set.push([inv_keys[i]*1000, inv[inv_keys[i]]]);
+                    } 
+
+                    if (this.timelineChart) {
+                        this.timelineChart.update({
+                            series: [{
+                                name: 'Survey Completed',
+                                data: this.complete_set,
+                            }, {
+                                name: 'Invitation Sent',
+                                data: this.invite_set,
+                            }]
+                        });
+
+                        if (completeHigh) {
+                            $('#complete-high-count').hide().html(cpHighCount).fadeIn(400);
+                            $('#complete-high').hide().html('('+new Date(completeHigh*1000).toISOString().slice(0,10).replace(/-/g,"/")+')').fadeIn(400);
+                        } 
+                        else {
+                            $('#complete-high-count').hide().html('N/A').fadeIn("slow");
+                            $('#complete-high').hide().html('').fadeIn("slow");
+                        } 
+
+                        if (inviteHigh) {
+                            $('#invite-high-count').hide().html(invHighCount).fadeIn(400);
+                            $('#invite-high').hide().html('('+new Date(inviteHigh*1000).toISOString().slice(0,10).replace(/-/g,"/")+')').fadeIn(400);
+                        } 
+                        else {
+                            $('#invite-high-count').hide().html('N/A').fadeIn("slow");
+                            $('#invite-high').hide().html('').fadeIn("slow");
+                        }
+                    }
+
+                    if (this.durationChart) {
+                        if (this.duration_set.length > 1) {
+                            durationChart.update({
+                                series: [{}, {
+                                    id: 's_dur',
+                                    data: this.duration_set
+                                }]
+                            }); 
+                        }
+                        else {
+                            this.durationChart.update({
+                                series: [{}, {
+                                    id: 's_dur',
+                                    data: []
+                                }]
+                            }); 
+                        }
+
+                        $('.highcharts-scatter-series').hide();
+
+                        if (this.duration_set.length > 0) {
+                            $('#duration-avg').hide().html(this.secToStr(Math.round( durTotal/this.duration_set.length ))).fadeIn(400);
+                            $('#duration-max').hide().html(this.secToStr(durMax)).fadeIn(400);
+                            $('#duration-min').hide().html(this.secToStr(durMin)).fadeIn(400);
+                        } 
+                        else {
+                            $('#duration-avg').hide().html('N/A').fadeIn(400);
+                            $('#duration-max').hide().html('N/A').fadeIn(400);
+                            $('#duration-min').hide().html('N/A').fadeIn(400);
+                        }
+                    }
+                },
+                secToStr: function (s)  {
+                    var r_str = (s/86400 > 1) ? Math.floor(s/86400) + 'd ' : '';
+                    var r_hr = Math.floor(s/3600) % 24;
+                    r_str += (r_hr > 0) ? r_hr + 'hr ' : '';
+                    var r_min = Math.floor(s/60) % 60;
+                    r_str += (r_min > 0) ? r_min + 'm ' : '';
+                    r_str += (s%60 < 10) ? '0' + s%60 + 's' : s%60 + 's';
+                    return r_str;
+                }
+            }
+
             $(".loadertxt").hide();
             $(".loader").hide();
-
-            function surveySelect(value) {
-                value = value.split("-");
-                $(".loadertxt").show();
-                $(".loader").show();
-                window.location.href = "index.php?pid=" + <?php echo $pid ?> + "&survey=" + value[0] + "&event=" + value[1];
-            }
-
-            var master_set = <?php echo json_encode(array_values($data_set)) ?>;
-            var complete_set = [], invite_set = [], duration_set = [];
-            var timelineChart, durationChart;
-            var data_set = master_set;
-            var prod_time = <?php echo ($prod_time)?$prod_time:"null" ?>;
-
-            // function to filter time range
-            function filter() {
-                var start, end;
-                switch ($('#period').val()) {
-                    case 'PD':
-                        start = prod_time;
-                        break;
-                    case '1y':
-                        start = (new Date().getTime()/1000|0) - 31536000;
-                        break;
-                    case '90d':
-                        start = (new Date().getTime()/1000|0) - 7776000;
-                        break;
-                    case '60d':
-                        start = (new Date().getTime()/1000|0) - 5184000;
-                        break;
-                    case '30d':
-                        start = (new Date().getTime()/1000|0) - 2592000;
-                        break;
-                    case '14d':
-                        start = (new Date().getTime()/1000|0) - 1209600;
-                        break;
-                    case '7d':
-                        start = (new Date().getTime()/1000|0) - 604800;
-                        break;
-                }
-                if (start && end) {
-                    
-                } else if (start) {
-                    data_set = [];
-                    for (var i = 0; i < master_set.length; i++) {
-                        if (master_set[i]["complete"] >= start) {
-                            data_set.push(master_set[i]);
-                        }
-                    }
-                } else if (end) {
-                    
-                } else {
-                    data_set = master_set;
-                }
-                update();
-            }
-
-            // function to update display data
-            function update() {
-                var cp = [], inv = [], dur = [];
-                var completeHigh, inviteHigh, cpHighCount = 0, invHighCount = 0;
-                var durTotal = 0, durMax = 0, durMin = 0;
-                complete_set = []; invite_set = []; duration_set = [];
-                for (var i = 0; i < data_set.length; i++) {
-                    if (data_set[i]["complete"]) {
-                        var completeTS = data_set[i]["complete"];
-                        if (cp[completeTS]) {
-                            cp[completeTS]++;
-                        } else {
-                            cp[completeTS] = 1;
-                        }
-                        if (cp[completeTS] > cpHighCount) {
-                            completeHigh = completeTS;
-                            cpHighCount = cp[completeTS];
-                        }
-                        
-                        if (data_set[i]["duration"]) {
-                            var durPt = data_set[i]["duration"];
-                            duration_set.push(durPt);
-                            /*
-                            if (dur[completeTS]){
-                                dur[completeTS]["count"]++;
-                                dur[completeTS]["total"] += durPt;
-                            } else {
-                                dur[completeTS] = {"count": 1, "total": durPt};
-                            }*/
-                            if (durPt > durMax) {
-                                durMax = durPt;
-                            }
-                            if (durMin == 0 || durPt < durMin) {
-                                durMin = durPt;
-                            }
-                            durTotal += durPt;
-                        }
-                    }
-                    if (data_set[i]["invite"]) {
-                        var inviteTS = data_set[i]["invite"];
-                        if (inv[inviteTS]) {
-                            inv[inviteTS]++;
-                        } else {
-                            inv[inviteTS] = 1;
-                        }
-                        if (inv[inviteTS] > invHighCount) {
-                            inviteHigh = inviteTS;
-                            invHighCount = inv[inviteTS];
-                        }
-                    } 
-                } 
-                var cp_keys = Object.keys(cp);
-                for (var i = 0; i < cp_keys.length; i++) {
-                    /*	Add dummy datapoint of 0 in between actual datapoints to keep line default to 0
-                    *	if the difference between 2 actual datapoints is more than 1 day, add one dummy after the first actual datapoint;
-                    *	and if the difference is more than 2 days, add one more dummy before the second actual datapoint
-                    */
-                    if (i == 0) {
-                        complete_set.push([(cp_keys[i]-86400)*1000, 0]);
-                    } else if (cp_keys[i] - cp_keys[i-1] > 86400){  
-                        complete_set.push([(+cp_keys[i-1]+86400)*1000, 0]);  // Need to add the "+" in front of the variable to force js to treat it as number
-                        if (cp_keys[i] - cp_keys[i-1] > 172800) {  
-                            complete_set.push([(cp_keys[i]-86400)*1000, 0]);
-                        }
-                    }
-                    complete_set.push([cp_keys[i]*1000, cp[cp_keys[i]]]);
-                }
-                var inv_keys = Object.keys(inv);
-                for (var i = 0; i < inv_keys.length; i++) {
-                    if (i == 0) {
-                        invite_set.push([(inv_keys[i]-86400)*1000, 0]);
-                    } else if (inv_keys[i] - inv_keys[i-1] > 86400){
-                        invite_set.push([(+inv_keys[i-1]+86400)*1000, 0]);  // Need to add the "+" in front of the variable to force js to treat it as number
-                        if (inv_keys[i] - inv_keys[i-1] > 172800) { 
-                            invite_set.push([(inv_keys[i]-86400)*1000, 0]);
-                        }
-                    }
-                    invite_set.push([inv_keys[i]*1000, inv[inv_keys[i]]]);
-                } 
-                if (timelineChart) {
-                    timelineChart.update({
-                        series: [{
-                            name: 'Survey Completed',
-                            data: complete_set,
-                        }, {
-                            name: 'Invitation Sent',
-                            data: invite_set,
-                        }]
-                    });
-                    if (completeHigh) {
-                        $('#complete-high-count').hide().html(cpHighCount).fadeIn(400);
-                        $('#complete-high').hide().html('('+new Date(completeHigh*1000).toISOString().slice(0,10).replace(/-/g,"/")+')').fadeIn(400);
-                    } else {
-                        $('#complete-high-count').hide().html('N/A').fadeIn("slow");
-                        $('#complete-high').hide().html('').fadeIn("slow");
-                    } 
-                    if (inviteHigh) {
-                        $('#invite-high-count').hide().html(invHighCount).fadeIn(400);
-                        $('#invite-high').hide().html('('+new Date(inviteHigh*1000).toISOString().slice(0,10).replace(/-/g,"/")+')').fadeIn(400);
-                    } else {
-                        $('#invite-high-count').hide().html('N/A').fadeIn("slow");
-                        $('#invite-high').hide().html('').fadeIn("slow");
-                    }
-                }
-                if (durationChart) {
-                    if (duration_set.length > 1) {
-                        durationChart.update({
-                            series: [{}, {
-                                id: 's_dur',
-                                data: duration_set
-                            }]
-                        }); 
-                    } else {
-                        durationChart.update({
-                            series: [{}, {
-                                id: 's_dur',
-                                data: []
-                            }]
-                        }); 
-                    }
-                    $('.highcharts-scatter-series').hide();
-                    if (duration_set.length > 0) {
-                        $('#duration-avg').hide().html(secToStr(Math.round( durTotal/duration_set.length ))).fadeIn(400);
-                        $('#duration-max').hide().html(secToStr(durMax)).fadeIn(400);
-                        $('#duration-min').hide().html(secToStr(durMin)).fadeIn(400);
-                        
-                    } else {
-                        $('#duration-avg').hide().html('N/A').fadeIn(400);
-                        $('#duration-max').hide().html('N/A').fadeIn(400);
-                        $('#duration-min').hide().html('N/A').fadeIn(400);
-                    }
-                }
-            }
-
-            function secToStr (s) {
-                var r_str = (s/86400 > 1) ? Math.floor(s/86400) + 'd ' : '';
-                var r_hr = Math.floor(s/3600) % 24;
-                r_str += (r_hr > 0) ? r_hr + 'hr ' : '';
-                var r_min = Math.floor(s/60) % 60;
-                r_str += (r_min > 0) ? r_min + 'm ' : '';
-                r_str += (s%60 < 10) ? '0' + s%60 + 's' : s%60 + 's';
-                return r_str;
-            }
 
             $(function () {
                 $('#conso-project-bar-chart').highcharts({
@@ -674,7 +645,6 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                         plotShadow: false
                     },
                     title: {
-                        //text: null
                         text: '<?php echo "Survey Response Overview"; ?>'
                     },
                     
@@ -705,9 +675,8 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                         ]
                     }]
                 });
-                
-                //$('#conso-project-timeline-chart').highcharts({
-                timelineChart = Highcharts.chart('conso-project-timeline-chart',{
+
+                SurveyDashboard.timelineChart = Highcharts.chart('conso-project-timeline-chart', {
                     credits: {
                         enabled: false
                     },
@@ -728,11 +697,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                         margin: 30,
                         x: 5,
                         useHTML: true
-                    },/*
-                    subtitle: {
-                        text: '<?php echo htmlspecialchars($surveyEventOptions["$survey-$event"],ENT_QUOTES); ?>',
-                        useHTML: true
-                    },*/
+                    },
                     xAxis: {
                         type: 'datetime',
                         title: {
@@ -761,13 +726,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                         headerFormat: '<b>{series.name}</b><br>',
                         pointFormat: '{point.x:%Y/%m/%d}: {point.y}'
                     },
-                    plotOptions: {
-                        /*spline: {
-                            marker: {
-                                enabled: false
-                            }
-                        }*/
-                    },
+                    plotOptions: {},
                     series: [{
                         name: 'Survey Completed',
                         data: []
@@ -777,9 +736,8 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                     }
                     ]
                 });
-                
-                //$('#conso-project-duration-chart').highcharts({
-                durationChart = Highcharts.chart('conso-project-duration-chart',{
+
+                SurveyDashboard.durationChart =  Highcharts.chart('conso-project-duration-chart', {
                     credits: {
                         enabled: false
                     },
@@ -791,17 +749,10 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                         },
                         fallbackToExportServer: false  // export server disabled
                     },
-                    /*chart: {
-                        type: 'line'
-                    },*/
                     title: {
                         text: '<?php echo "Distribution of Duration from Survey Invitation to Completion"; ?>',
                         align: 'left'
-                    },/*
-                    subtitle: {
-                        text: '<?php echo htmlspecialchars($surveyEventOptions["$survey-$event"],ENT_QUOTES); ?>',
-                        useHTML: true
-                    },*/
+                    },
                     xAxis: [{
                         title: {
                             text: null
@@ -818,7 +769,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                             rotation: -45,
                             align: 'right',
                             formatter: function() {
-                                return secToStr(this.value);
+                                return SurveyDashboard.secToStr(this.value);
                             }
                         }
                     }],
@@ -837,7 +788,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                     }],
                     tooltip: {
                         formatter: function () {
-                            return '<span style="font-size:10px">'+secToStr(Math.round(this.point.x))+' - '+secToStr(Math.round(this.point.x2))+'</span><br/><span style="color:'+this.color+'">●</span> Count: <b>'+this.y+'</b><br/>';
+                            return '<span style="font-size:10px">' + SurveyDashboard.secToStr(Math.round(this.point.x)) +' - ' + SurveyDashboard.secToStr(Math.round(this.point.x2)) + '</span><br/><span style="color:' + this.color + '">●</span> Count: <b>' + this.y + '</b><br/>';
                         }
                     },
                     legend: {
@@ -855,11 +806,11 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                         id: 's_dur',
                         visible: false
                     }]
-                }); 
+                });
                 
                 $(".highcharts-credits").hide();
                 $('.highcharts-scatter-series').hide();
-                update(); 
+                SurveyDashboard.update();
             });
         </script>
         <?php
