@@ -581,7 +581,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
 
                     if (this.durationChart) {
                         if (this.duration_set.length > 1) {
-                            durationChart.update({
+                            this.durationChart.update({
                                 series: [{}, {
                                     id: 's_dur',
                                     data: this.duration_set
@@ -736,7 +736,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                     ]
                 });
 
-                SurveyDashboard.durationChart =  Highcharts.chart('conso-project-duration-chart', {
+                SurveyDashboard.durationChart = Highcharts.chart('conso-project-duration-chart', {
                     credits: {
                         enabled: false
                     },
