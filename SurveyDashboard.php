@@ -54,6 +54,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         reset($surveyEventOptions); 
         $default = key($surveyEventOptions);
         $survey = $_GET["survey"];   // survey
+
         $event = $_GET["event"];     // event
         
         if (!empty($survey) && !empty($event) && isset($surveyEventOptions["$survey-$event"])) {
@@ -82,7 +83,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         if($row_count == NULL || $row_count == 0) { ?>
         <div class="row">
             <div class="col-sm-12 error small">
-                <b>Error</b>: This project does <b><u>NOT</u></b> have any survey setup. <br/>
+                <h1><b>Error</b>: This project does <b><u>NOT</u></b> have any survey setup.</h1> <br/>
             </div>
         </div>
         <?php } ?>
@@ -157,7 +158,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         $max_invite[0] = 0;
 
         //check if this survey is listed as a public survey  or not.
-        $survey_public  = "SELECT survey_id, hash FROM redcap_surveys_participants WHERE legacy_hash IS NULL AND participant_email IS NULL AND participant_identifier IS NULL AND survey_id = $survey";
+        $survey_public  = "SELECT survey_id, hash FROM redcap_surveys_participants WHERE legacy_hash IS NULL AND participant_email IS NULL AND participant_identifier IS NULL AND survey_id = '$survey'";
         $survey_public_result  = $this->query($survey_public);				  
         $row_count_survey_public_result = mysqli_num_rows($survey_public_result);
         if($row_count_survey_public_result != NULL && $row_count_survey_public_result != 0)
@@ -173,7 +174,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         }
 
         //check if this survey is in survey queue list - if it yes - then pull the parent's survey invitation time 
-        $survey_queue  = "SELECT condition_surveycomplete_survey_id FROM redcap_surveys_queue where survey_id = $survey"; 
+        $survey_queue  = "SELECT condition_surveycomplete_survey_id FROM redcap_surveys_queue where survey_id = '$survey'"; 
         $survey_queue_result  = $this->query($survey_queue);				  
         $row_count_survey_queue_result = mysqli_num_rows($survey_queue_result);
         if($row_count_survey_queue_result != NULL && $row_count_survey_queue_result != 0)
@@ -183,7 +184,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                 //check if this survey as parent survey_id - do loop 
                 for($i=0; $i<$row_count_survey_queue_result ;$i++)
                 {
-                    $survey_queue  = "SELECT condition_surveycomplete_survey_id FROM redcap_surveys_queue where survey_id = $survey"; 
+                    $survey_queue  = "SELECT condition_surveycomplete_survey_id FROM redcap_surveys_queue where survey_id = '$survey'"; 
                     $survey_queue_result  = $this->query($survey_queue);				  
                     $row_count_survey_queue_result = mysqli_num_rows($survey_queue_result);
                     if($row_count_survey_queue_result != NULL && $row_count_survey_queue_result != 0)
