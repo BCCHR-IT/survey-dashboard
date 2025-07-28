@@ -7,11 +7,6 @@ use Project;
 
 class SurveyDashboard extends \ExternalModules\AbstractExternalModule
 {
-    function  __construct()
-    {
-        parent::__construct();
-    }
-
     public function getDashboard() 
     {
         /* Survey dashboard statistics */
@@ -37,9 +32,20 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                 // Get survey_id
                 $this_survey_id = $Proj->forms[$form_name]['survey_id'];
                 // If longitudinal, add event name
-                $event_name = ($longitudinal) ? " - ".$Proj->eventInfo[$this_event_id]['name_ext'] : "";
+                // $event_name = ($longitudinal) ? " - ".$Proj->eventInfo[$this_event_id]['name_ext'] : "";
+                $event_name_raw = ($longitudinal) ? " - ".$Proj->eventInfo[$this_event_id]['name_ext'] : "";
+                $event_name = filter_tags($event_name_raw);
+
                 // If survey title is blank (because using a logo instead), then insert the instrument name
-                $survey_title = ($Proj->surveys[$this_survey_id]['title'] == "") ? $Proj->forms[$form_name]['menu'] : $Proj->surveys[$this_survey_id]['title'];
+                // $survey_title = ($Proj->surveys[$this_survey_id]['title'] == "") ? $Proj->forms[$form_name]['menu'] : $Proj->surveys[$this_survey_id]['title'];
+                $survey_title_raw = ($Proj->surveys[$this_survey_id]['title'] == "")
+                    ? $Proj->forms[$form_name]['menu']
+                    : $Proj->surveys[$this_survey_id]['title'];
+
+                // Strip any HTML tags to neutralize XSS risk
+                $survey_title = filter_tags($survey_title_raw);
+
+
                 // Truncate survey title if too long
                 if (strlen($survey_title.$event_name) > 90) {
                     $survey_title = substr($survey_title, 0, 87-strlen($event_name)) . "...";
@@ -74,11 +80,18 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
 	    </ul>
         <?php
 
-        $surveyQuery = "select * from redcap_surveys where project_id = '$pid' ";
+        // $surveyQuery = "select * from redcap_surveys where project_id = '$pid' ";
 
-        $sResult = $this->query($surveyQuery);
+        // $sResult = $this->query($surveyQuery);
 
-        $row_count = mysqli_num_rows($sResult);
+        // $row_count = mysqli_num_rows($sResult);
+        $surveyQuery = "select * from redcap_surveys where project_id = ?";
+        $sResult = $this->query($surveyQuery, [$pid]);
+        $row_count = 0;
+        while (db_fetch_assoc($sResult)) {
+            $row_count++;
+        }
+
 
         if($row_count == NULL || $row_count == 0) { ?>
         <div class="row">
@@ -96,6 +109,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                         <?php
                             foreach($surveyEventOptions as $value => $label) {
                                 $label = htmlspecialchars($label); 
+                                $value = htmlspecialchars($value);
                                 print '<option '.(($value == $default)?'selected ':'').'value="'. $value .'">'. $label .'</option>';
                             }
                         ?>
@@ -158,9 +172,18 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         $max_invite[0] = 0;
 
         //check if this survey is listed as a public survey  or not.
-        $survey_public  = "SELECT survey_id, hash FROM redcap_surveys_participants WHERE legacy_hash IS NULL AND participant_email IS NULL AND participant_identifier IS NULL AND survey_id = '$survey'";
-        $survey_public_result  = $this->query($survey_public);				  
-        $row_count_survey_public_result = mysqli_num_rows($survey_public_result);
+        // $survey_public  = "SELECT survey_id, hash FROM redcap_surveys_participants WHERE legacy_hash IS NULL AND participant_email IS NULL AND participant_identifier IS NULL AND survey_id = '$survey'";
+        // $survey_public_result  = $this->query($survey_public);				  
+        $survey_public  = "SELECT survey_id, hash FROM redcap_surveys_participants WHERE legacy_hash IS NULL AND participant_email IS NULL AND participant_identifier IS NULL AND survey_id = ?";
+        $survey_public_result  = $this->query($survey_public, [$survey]);
+
+        // $row_count_survey_public_result = mysqli_num_rows($survey_public_result);
+        $row_count_survey_public_result = 0;
+        while ($row = db_fetch_assoc($survey_public_result)) {
+            $row_count_survey_public_result++;
+        }
+
+
         if($row_count_survey_public_result != NULL && $row_count_survey_public_result != 0)
         {
             while ($row = db_fetch_assoc($survey_public_result)) {	
@@ -174,9 +197,17 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         }
 
         //check if this survey is in survey queue list - if it yes - then pull the parent's survey invitation time 
-        $survey_queue  = "SELECT condition_surveycomplete_survey_id FROM redcap_surveys_queue where survey_id = '$survey'"; 
-        $survey_queue_result  = $this->query($survey_queue);				  
-        $row_count_survey_queue_result = mysqli_num_rows($survey_queue_result);
+        // $survey_queue  = "SELECT condition_surveycomplete_survey_id FROM redcap_surveys_queue where survey_id = '$survey'"; 
+        // $survey_queue_result  = $this->query($survey_queue);
+        $survey_queue  = "SELECT condition_surveycomplete_survey_id FROM redcap_surveys_queue WHERE survey_id = ?";
+        $survey_queue_result  = $this->query($survey_queue, [$survey]);
+
+        // $row_count_survey_queue_result = mysqli_num_rows($survey_queue_result);
+        $row_count_survey_queue_result = 0;
+        while ($row = db_fetch_assoc($survey_queue_result)) {
+            $row_count_survey_queue_result++;
+        }
+
         if($row_count_survey_queue_result != NULL && $row_count_survey_queue_result != 0)
         {
             while ($row = db_fetch_assoc($survey_queue_result)) {	
@@ -184,8 +215,11 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                 //check if this survey as parent survey_id - do loop 
                 for($i=0; $i<$row_count_survey_queue_result ;$i++)
                 {
-                    $survey_queue  = "SELECT condition_surveycomplete_survey_id FROM redcap_surveys_queue where survey_id = '$survey'"; 
-                    $survey_queue_result  = $this->query($survey_queue);				  
+                    // $survey_queue  = "SELECT condition_surveycomplete_survey_id FROM redcap_surveys_queue where survey_id = '$survey'"; 
+                    // $survey_queue_result  = $this->query($survey_queue);	
+                    $survey_queue  = "SELECT condition_surveycomplete_survey_id FROM redcap_surveys_queue WHERE survey_id = ?";
+                    $survey_queue_result  = $this->query($survey_queue, [$survey]);
+		  
                     $row_count_survey_queue_result = mysqli_num_rows($survey_queue_result);
                     if($row_count_survey_queue_result != NULL && $row_count_survey_queue_result != 0)
                     {
@@ -209,16 +243,28 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
                 </p>';
         }
 
-        $query2 = "SELECT rser.participant_id, min(rse.email_sent) as sent_time, rsp.event_id, rsp.hash, rsr.record " . 
-                    "FROM redcap_surveys s, redcap_surveys_emails rse, redcap_surveys_participants rsp, redcap_surveys_emails_recipients rser
-                LEFT JOIN redcap_surveys_response rsr ON rsr.participant_id = rser.participant_id " . 
-                "WHERE s.survey_id = rse.survey_id AND rse.survey_id = rsp.survey_id AND rse.email_id = rser.email_id AND rsp.participant_id = rser.participant_id " . 
-                    "AND s.survey_id = '$survey' AND rsp.event_id = '$event' " . 
-                "GROUP BY rsp.hash ORDER BY sent_time; ";
+        // $query2 = "SELECT rser.participant_id, min(rse.email_sent) as sent_time, rsp.event_id, rsp.hash, rsr.record " . 
+        //             "FROM redcap_surveys s, redcap_surveys_emails rse, redcap_surveys_participants rsp, redcap_surveys_emails_recipients rser
+        //         LEFT JOIN redcap_surveys_response rsr ON rsr.participant_id = rser.participant_id " . 
+        //         "WHERE s.survey_id = rse.survey_id AND rse.survey_id = rsp.survey_id AND rse.email_id = rser.email_id AND rsp.participant_id = rser.participant_id " . 
+        //             "AND s.survey_id = '$survey' AND rsp.event_id = '$event' " . 
+        //         "GROUP BY rsp.hash ORDER BY sent_time; ";
 
-        $result2 = $this->query($query2);
+        // $result2 = $this->query($query2);
+        $query2 = "SELECT rser.participant_id, min(rse.email_sent) as sent_time, rsp.event_id, rsp.hash, rsr.record 
+            FROM redcap_surveys s, redcap_surveys_emails rse, redcap_surveys_participants rsp, redcap_surveys_emails_recipients rser
+            LEFT JOIN redcap_surveys_response rsr ON rsr.participant_id = rser.participant_id 
+            WHERE s.survey_id = rse.survey_id AND rse.survey_id = rsp.survey_id AND rse.email_id = rser.email_id AND rsp.participant_id = rser.participant_id 
+            AND s.survey_id = ? AND rsp.event_id = ?
+            GROUP BY rsp.hash ORDER BY sent_time;";
+        $result2 = $this->query($query2, [$survey, $event]);
 
-        $row_count2 = mysqli_num_rows($result2);
+        // $row_count2 = mysqli_num_rows($result2);
+        $row_count2 = 0;
+        while ($row = db_fetch_assoc($result2)) {
+            $row_count2++;
+        }
+
 
         if($row_count2 != NULL && $row_count2 != 0)
         {
