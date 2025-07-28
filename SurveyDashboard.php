@@ -404,6 +404,7 @@ class SurveyDashboard extends \ExternalModules\AbstractExternalModule
         <br/><br/>
         <script src="<?php print $this->getUrl("highcharts.js"); ?>"></script>
         <script src="<?php print $this->getUrl("exporting.js"); ?>"></script>
+        <script src="<?php print $this->getUrl("offline-exporting.js"); ?>"></script>
         <script src="<?php print $this->getUrl("histogram-bellcurve.js"); ?>"></script>
         <link rel="stylesheet" type="text/css" href="<?php print $this->getUrl("sb-admin.css"); ?>">           
         <script>
